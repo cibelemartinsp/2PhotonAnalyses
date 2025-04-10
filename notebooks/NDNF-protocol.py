@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.0
+#       jupytext_version: 1.16.7
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -24,22 +24,23 @@ import pandas as pd
 import matplotlib.pylab as plt
 
 # add the physion path:
-sys.path.append('../physion/src')
-import physion
+sys.path.append('/home/user/work/physion/src')
+from physion.analysis.read_NWB import Data, scan_folder_for_NWBfiles
+from physion.analysis.process_NWB import EpisodeData
 from physion.analysis.behavior import population_analysis as behavior_population_analysis
 from physion.dataviz.raw import plot as plot_raw
 from physion.dataviz.episodes.trial_average import plot as plot_trial_average
 from physion.utils import plot_tools as pt
 
-# %% [markdown]
-# ## loading the set of nwb files
-
 # %%
-datafolder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED' , 'TEST-NDNF-protocol') 
+datafolder = os.path.join(os.path.expanduser('~'), 'DATA' , 'NDNF-WT-Dec-2022', 'NWBs') 
   
-SESSIONS = physion.analysis.read_NWB.scan_folder_for_NWBfiles(datafolder)
+SESSIONS = scan_folder_for_NWBfiles(datafolder)
 SESSIONS['nwbfiles'] = [os.path.basename(f) for f in SESSIONS['files']]
 
+
+# %%
+#behavior_population_analysis(SESSIONS['files'])
 
 # %% [markdown]
 # ## Plotting the full time course and the average visually-evoked activity
@@ -52,7 +53,7 @@ def plot_full_time_course(data):
     fig, _ = plot_raw(data, data.tlim, 
                       settings={'Locomotion':dict(fig_fraction=1, subsampling=1, color='tab:blue'),
                                 'FaceMotion':dict(fig_fraction=1, subsampling=1, color='tab:purple'),
-                                'Pupil':dict(fig_fraction=1, subsampling=1, color='tab:red'),
+                                #'Pupil':dict(fig_fraction=1, subsampling=1, color='tab:red'),
                                 'CaImaging':dict(fig_fraction=3, subsampling=1, 
                                                  subquantity='dF/F', color='tab:green',
                                                  roiIndices=np.random.choice(range(data.nROIs),8)),
@@ -101,7 +102,7 @@ def plot_average_visually_evoked_activity(data,
 
     for p, protocol in enumerate(protocols):
 
-        episodes = physion.analysis.process_NWB.EpisodeData(data, 
+        episodes = EpisodeData(data, 
                                quantities=['dFoF'],
                                protocol_name=protocol,
                                verbose=False)
@@ -139,10 +140,10 @@ def plot_average_visually_evoked_activity(data,
             i+=1
 
     if roiIndex is None:
-        AX[-1][0].annotate('single session \n --> mean$\pm$s.d. over n=%i ROIs' % data.nROIs, (0, 0),
+        AX[-1][0].annotate('single session \n --> mean$\\pm$s.d. over n=%i ROIs' % data.nROIs, (0, 0),
                            xycoords='axes fraction')
     else:
-        AX[-1][0].annotate('roi #%i \n --> mean$\pm$s.d. over n=10 trials' % (1+roiIndex), (0, 0),
+        AX[-1][0].annotate('roi #%i \n --> mean$\\pm$s.d. over n=10 trials' % (1+roiIndex), (0, 0),
                            xycoords='axes fraction')
 
     pt.set_common_ylims(AX)
@@ -151,7 +152,7 @@ def plot_average_visually_evoked_activity(data,
         if np.isfinite(ax.dataLim.x0):
             pt.draw_bar_scales(ax,
                                Xbar=1., Xbar_label='1s',
-                               Ybar=1, Ybar_label='1$\Delta$F/F', fontsize=7)
+                               Ybar=1, Ybar_label='1$\\Delta$F/F', fontsize=7)
     pt.set_common_xlims(AX)
     
     return fig
@@ -160,9 +161,8 @@ def plot_average_visually_evoked_activity(data,
 # ### Testing
 
 # %%
-index = 0
-filename = SESSIONS['files'][index]
-data = physion.analysis.read_NWB.Data(filename,
+filename = os.path.join(os.path.expanduser('~'), 'DATA' , 'Cibele', 'PV_BB_V1', 'NWBs', '2025_02_17-16-21-22.nwb') 
+data = Data(filename,
             verbose=False)
 data.build_dFoF(verbose=False, smoothing=1)
 fig = plot_full_time_course(data)
@@ -170,13 +170,12 @@ fig.subplots_adjust(left=0.2, top=0.95)
 fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'fig.png'))
 
 # %%
-np.random.seed(9)
-roiIndices = np.random.choice(range(data.nROIs), 8, replace=False)
+roiIndices = np.random.choice(range(data.nROIs),8, replace=False)
 t0 = 15*60
 fig1, ax = plot_raw(data, [t0, t0+10*60],
                   settings={'Locomotion':dict(fig_fraction=1, subsampling=1, color='tab:blue'),
                             'FaceMotion':dict(fig_fraction=1, subsampling=1, color='tab:purple'),
-                            'Pupil':dict(fig_fraction=1, subsampling=1, color='tab:red'),
+                            #'Pupil':dict(fig_fraction=1, subsampling=1, color='tab:red'),
                             'CaImaging':dict(fig_fraction=3, subsampling=1, 
                                              subquantity='dF/F', color='tab:green',
                                              roiIndices=roiIndices),
@@ -190,7 +189,7 @@ ax.plot([t0, t0+75], [1,1], lw=4, color='lightgrey')
 fig2, _ = plot_raw(data, [t0, t0+75],
                   settings={'Locomotion':dict(fig_fraction=1, subsampling=1, color='tab:blue'),
                             'FaceMotion':dict(fig_fraction=1, subsampling=1, color='tab:purple'),
-                            'Pupil':dict(fig_fraction=1, subsampling=1, color='tab:red'),
+                            #'Pupil':dict(fig_fraction=1, subsampling=1, color='tab:red'),
                             'CaImaging':dict(fig_fraction=3, subsampling=1, 
                                              subquantity='dF/F', color='tab:green',
                                              roiIndices=roiIndices),
@@ -204,16 +203,32 @@ fig2, _ = plot_raw(data, [t0, t0+75],
 #fig2.savefig('../figures/raw-zoom.svg')
 
 # %%
-index = 0
-filename = SESSIONS['files'][index]
-data = physion.analysis.read_NWB.Data(filename,
-            verbose=False)
 fig, ax = pt.figure(figsize=(2,3))
+import physion
 physion.dataviz.imaging.show_CaImaging_FOV(data, NL=2, ax=ax, with_annotation=False)
 #fig.savefig('../figures/FOV.svg')
 
 # %%
-fig = plot_average_visually_evoked_activity(data, roiIndex=0, with_sd=True)
+t0 = 17.5*60
+#np.random.seed(10)
+#roiIndices = np.random.choice(range(data.nROIs),8, replace=False)
+
+fig2, _ = plot_raw(data, [t0, t0+2*60],
+                  settings={'Locomotion':dict(fig_fraction=1, subsampling=1, color='tab:blue'),
+                            'FaceMotion':dict(fig_fraction=1, subsampling=1, color='tab:purple'),
+                            #'Pupil':dict(fig_fraction=1, subsampling=1, color='tab:red'),
+                            'CaImaging':dict(fig_fraction=3, subsampling=1, 
+                                             subquantity='dF/F', color='tab:green',
+                                             roiIndices=roiIndices),
+                            'CaImagingRaster':dict(fig_fraction=2, subsampling=1,
+                                                   roiIndices='all',
+                                                   normalization='per-line',
+                                                   subquantity='dF/F'),
+                           'VisualStim': {'fig_fraction': 1e-3, 'color': 'black'}},
+                            Tbar=1, figsize=(4,5))
+
+# %%
+fig = plot_average_visually_evoked_activity(data, roiIndex=1, with_sd=True)
 #fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'fig.png'))
 
 # %%
@@ -223,3 +238,28 @@ fig = plot_average_visually_evoked_activity(data, roiIndex=2, with_sd=True)
 # %%
 fig = plot_average_visually_evoked_activity(data)
 #fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'fig.png'))
+
+# %%
+
+# %%
+if 'yann' in os.path.expanduser('~'):
+    datafolder = os.path.join(os.path.expanduser('~'), 'CURATED' , 'NDNF-December-2022') # for yann
+else: # means baptiste
+    datafolder = os.path.join(os.path.expanduser('~'), 'Documents', 'ICMProjet','modulation-V1-processing','data','NDNF-December-2022')
+    
+FILENAMES = ['2022_12_14-13-27-41.nwb',
+             '2022_12_15-18-13-25.nwb',
+             '2022_12_15-18-49-40.nwb',
+             '2022_12_16-11-00-09.nwb',
+             '2022_12_16-12-03-30.nwb',
+             '2022_12_16-12-47-57.nwb',
+             '2022_12_16-13-40-07.nwb',
+             '2022_12_16-14-29-38.nwb',
+             '2022_12_20-11-49-18.nwb',
+             '2022_12_20-12-31-08.nwb',
+             '2022_12_20-14-08-45.nwb']
+
+# %% [markdown]
+# ### Single page for a single session
+
+# %%
